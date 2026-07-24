@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { supabase } from './lib/supabase';
 
 interface Post {
   id: string;
@@ -16,22 +17,28 @@ export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(true); // default to dark mode for CRT vibe
   const [posts, setPosts] = useState<Post[]>([]);
   const [inputText, setInputText] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    // Init some dummy posts
-    setPosts([
-      {
-        id: 'E5F6G7H8',
-        content: 'Hello world. Testing public broadcast protocol. Preserving public thoughts in the digital ether.',
-        timestamp: getTimestamp(),
-      },
-      {
-        id: 'A1B2C3D4',
-        content: 'Initializing CacheDrive...\nSystem ready.',
-        timestamp: getTimestamp(),
+    const fetchPosts = async () => {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching posts:', error);
+        setIsLoading(false);
+        return;
       }
-    ]);
+
+      if (data) setPosts(data as Post[]);
+      setIsLoading(false);
+    };
+
+    fetchPosts();
   }, []);
 
   useEffect(() => {
@@ -42,15 +49,28 @@ export default function App() {
     }
   }, [isDarkMode]);
 
-  const handleSubmit = () => {
-    if (!inputText.trim()) return;
+  const handleSubmit = async () => {
+    if (!inputText.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+
     const newPost: Post = {
       id: generateId(),
       content: inputText,
-      timestamp: getTimestamp()
+      timestamp: getTimestamp(),
     };
+
+    const { error } = await supabase.from('posts').insert(newPost);
+
+    if (error) {
+      console.error('Error saving post:', error);
+      setIsSubmitting(false);
+      return;
+    }
+
     setPosts([newPost, ...posts]);
     setInputText('');
+    setIsSubmitting(false);
     textareaRef.current?.focus();
   };
 
@@ -93,9 +113,10 @@ export default function App() {
            </div>
            <button
              onClick={handleSubmit}
-             className="uppercase font-bold border-2 border-[var(--color-border)] px-4 py-3 shadow-[6px_6px_0px_0px_var(--color-shadow)] active:shadow-none active:translate-x-[6px] active:translate-y-[6px] transition-none bg-[var(--color-surface)] w-full text-center hover:bg-[var(--color-text)] hover:text-[var(--color-bg)] cursor-pointer"
+             disabled={isSubmitting}
+             className="uppercase font-bold border-2 border-[var(--color-border)] px-4 py-3 shadow-[6px_6px_0px_0px_var(--color-shadow)] active:shadow-none active:translate-x-[6px] active:translate-y-[6px] transition-none bg-[var(--color-surface)] w-full text-center hover:bg-[var(--color-text)] hover:text-[var(--color-bg)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
            >
-             TRANSMIT_DATA
+             {isSubmitting ? 'TRANSMITTING...' : 'TRANSMIT_DATA'}
            </button>
            
            <div className="text-xs opacity-80 font-mono mt-2 hidden lg:block">
@@ -109,27 +130,31 @@ export default function App() {
 
          <section className="lg:col-span-7 flex flex-col">
             <h2 className="text-xl font-bold mb-6 uppercase tracking-wider">++ RECENT_ARCHIVES ++</h2>
-            <div className="flex flex-col gap-8">
-              {posts.map((post, i) => (
-                <div key={post.id} className="flex flex-col gap-3 group">
-                   <div className="flex justify-between items-center text-xs border-b border-dashed border-[var(--color-border)] pb-2 uppercase tracking-wide opacity-80">
-                     <span className="font-bold">ID: {post.id}</span>
-                     <span>{post.timestamp}</span>
-                   </div>
-                   <p className="whitespace-pre-wrap break-words leading-relaxed text-sm md:text-base">
-                     {post.content}
-                   </p>
-                   {i !== posts.length - 1 && (
-                     <div className="text-[var(--color-border)] opacity-30 mt-6 text-xs tracking-widest text-center">
-                       * * *
+            {isLoading ? (
+              <p className="opacity-50 italic">LOADING ARCHIVE...</p>
+            ) : (
+              <div className="flex flex-col gap-8">
+                {posts.map((post, i) => (
+                  <div key={post.id} className="flex flex-col gap-3 group">
+                     <div className="flex justify-between items-center text-xs border-b border-dashed border-[var(--color-border)] pb-2 uppercase tracking-wide opacity-80">
+                       <span className="font-bold">ID: {post.id}</span>
+                       <span>{post.timestamp}</span>
                      </div>
-                   )}
-                </div>
-              ))}
-              {posts.length === 0 && (
-                 <p className="opacity-50 italic">NO DATA FOUND IN ARCHIVE.</p>
-              )}
-            </div>
+                     <p className="whitespace-pre-wrap break-words leading-relaxed text-sm md:text-base">
+                       {post.content}
+                     </p>
+                     {i !== posts.length - 1 && (
+                       <div className="text-[var(--color-border)] opacity-30 mt-6 text-xs tracking-widest text-center">
+                         * * *
+                       </div>
+                     )}
+                  </div>
+                ))}
+                {posts.length === 0 && (
+                   <p className="opacity-50 italic">NO DATA FOUND IN ARCHIVE.</p>
+                )}
+              </div>
+            )}
          </section>
        </main>
        
