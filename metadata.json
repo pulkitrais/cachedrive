@@ -1,0 +1,6 @@
+{
+  "name": "CacheDrive",
+  "description": "A retro internet preserved cache.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

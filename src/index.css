@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+:root {
+  --color-bg: #e5e5e5;
+  --color-surface: #f5f5f5;
+  --color-text: #000000;
+  --color-border: #000000;
+  --color-shadow: #000000;
+}
+
+.dark {
+  --color-bg: #050505;
+  --color-surface: #0a0a0a;
+  --color-text: #33ff33;
+  --color-border: #33ff33;
+  --color-shadow: #1a801a;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+  overflow-x: hidden;
+}
+
+.retro-textarea {
+  caret-color: var(--color-text);
+  caret-shape: block; 
+}
+
+/* Terminal blink effect */
+.blink {
+  animation: blinker 1s step-end infinite;
+}
+
+@keyframes blinker {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Scrollbar retro styling */
+::-webkit-scrollbar {
+  width: 16px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-surface);
+  border-left: 2px solid var(--color-border);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-text);
+  border: 2px solid var(--color-border);
+}
